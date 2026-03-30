@@ -1,4 +1,4 @@
-// === Data Layer (localStorage) ===
+// === Data Layer (localStorage + JSON file sync) ===
 const DB = {
   KEY: 'dog_training_clients',
 
@@ -10,6 +10,27 @@ const DB = {
 
   save(data) {
     localStorage.setItem(this.KEY, JSON.stringify(data));
+    // Persist to JSON file via server (fire-and-forget)
+    fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data, null, 2)
+    }).catch(function() {});
+  },
+
+  // Load data from JSON file into localStorage (called once on startup).
+  // Only works when server.py is running (provides /api/data).
+  // Falls back silently to localStorage when using a plain HTTP server.
+  async loadFromFile() {
+    try {
+      var res = await fetch('/api/data');
+      if (res.ok) {
+        var data = await res.json();
+        if (data && Array.isArray(data.clients)) {
+          localStorage.setItem(this.KEY, JSON.stringify(data));
+        }
+      }
+    } catch(e) { /* server API not available, use localStorage */ }
   },
 
   getClients() {
@@ -595,4 +616,6 @@ Router.on('#/client/new', () => renderClientForm());
 Router.on('#/client/:id', (id) => renderClientDetail(id));
 Router.on('#/client/:id/edit', (id) => renderClientForm(id));
 Router.on('#/client/:id/session/new', (id) => renderSessionForm(id));
-Router.init();
+
+// Load data from file (if server.py is running), then start the app
+DB.loadFromFile().then(function() { Router.init(); });

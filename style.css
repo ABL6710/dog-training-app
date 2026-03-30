@@ -25,8 +25,8 @@
   --radius-sm: 10px;
   --danger: #e06060;
   --danger-hover: #c44b4b;
-  --font-display: 'Frank Ruhl Libre', 'David', Georgia, serif;
-  --font-body: 'Rubik', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Heebo', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Heebo', 'Segoe UI', system-ui, sans-serif;
   --ease: .2s ease;
 }
 
@@ -79,8 +79,8 @@ header .container {
 
 header h1 {
   font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
 }
 
 header h1 a {
@@ -92,7 +92,7 @@ header nav a {
   color: var(--text-secondary);
   text-decoration: none;
   margin-right: 20px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   transition: color var(--ease);
 }
@@ -106,7 +106,7 @@ header nav a:hover {
   padding: 12px 20px;
   border-radius: var(--radius-sm);
   margin: 16px 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   animation: slideDown .3s ease;
 }
@@ -136,8 +136,8 @@ header nav a:hover {
 
 .page-header h2 {
   font-family: var(--font-display);
-  font-size: 1.6rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   color: var(--text);
 }
 
@@ -148,10 +148,10 @@ header nav a:hover {
 
 .search-bar input {
   width: 100%;
-  padding: 13px 18px;
+  padding: 14px 18px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-family: var(--font-body);
   direction: rtl;
   transition: all var(--ease);
@@ -201,7 +201,7 @@ header nav a:hover {
 
 .client-info h3 {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text);
   margin-bottom: 3px;
 }
@@ -209,21 +209,21 @@ header nav a:hover {
 .client-info .dog-name {
   color: var(--primary);
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .client-info .meta {
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   margin-top: 4px;
 }
 
 .client-badge {
   background: var(--primary-light);
   color: var(--primary);
-  padding: 5px 14px;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -246,7 +246,7 @@ header nav a:hover {
 
 .detail-card h3 {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--primary);
   margin-bottom: 14px;
   padding-bottom: 10px;
@@ -258,7 +258,7 @@ header nav a:hover {
   justify-content: space-between;
   align-items: baseline;
   padding: 5px 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .detail-row .label {
@@ -288,7 +288,7 @@ header nav a:hover {
 
 .editable-section h3 {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--primary);
   margin-bottom: 12px;
   padding-bottom: 10px;
@@ -298,7 +298,7 @@ header nav a:hover {
 .editable-section .content {
   white-space: pre-wrap;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 1rem;
   min-height: 32px;
   line-height: 1.7;
 }
@@ -314,7 +314,7 @@ header nav a:hover {
   padding: 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-family: var(--font-body);
   direction: rtl;
   resize: vertical;
@@ -354,7 +354,7 @@ header nav a:hover {
 /* === Sessions Timeline === */
 .sessions-section h3 {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   color: var(--text);
   margin: 28px 0 16px;
 }
@@ -371,8 +371,8 @@ header nav a:hover {
 
 .session-date {
   color: var(--primary);
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 1rem;
   margin-bottom: 10px;
 }
 
@@ -382,14 +382,14 @@ header nav a:hover {
 
 .session-field .field-label {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 500;
   margin-bottom: 2px;
 }
 
 .session-field .field-value {
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 1rem;
   white-space: pre-wrap;
   line-height: 1.6;
 }
@@ -399,9 +399,9 @@ header nav a:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 20px;
+  padding: 11px 22px;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   font-family: var(--font-body);
   text-decoration: none;
@@ -443,7 +443,7 @@ header nav a:hover {
   border: none;
   color: var(--primary);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 500;
   padding: 6px 10px;
   font-family: var(--font-body);
@@ -456,8 +456,8 @@ header nav a:hover {
 }
 
 .btn-sm {
-  padding: 7px 14px;
-  font-size: 0.85rem;
+  padding: 8px 16px;
+  font-size: 0.95rem;
 }
 
 .btn-group {
@@ -482,7 +482,7 @@ header nav a:hover {
 
 .form-section h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: var(--primary);
   margin-bottom: 18px;
   padding-bottom: 10px;
@@ -495,7 +495,7 @@ header nav a:hover {
 
 .form-group label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-secondary);
   margin-bottom: 7px;
@@ -507,7 +507,7 @@ header nav a:hover {
   padding: 11px 14px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-family: var(--font-body);
   direction: rtl;
   transition: all var(--ease);
@@ -561,7 +561,7 @@ header nav a:hover {
 }
 
 .empty-state p {
-  font-size: 1rem;
+  font-size: 1.1rem;
   margin-bottom: 20px;
 }
 
