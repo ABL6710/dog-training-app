@@ -283,7 +283,7 @@ function renderClientDetail(clientId) {
       el('span', { className: 'label', textContent: label }),
     ]);
     if (label === 'טלפון') {
-      const link = el('a', { href: 'tel:' + value, style: 'color:#40916c;text-decoration:none' });
+      const link = el('a', { href: 'tel:' + value, style: 'color:var(--primary);text-decoration:none' });
       link.textContent = value;
       const span = el('span', { className: 'value' });
       span.appendChild(link);
@@ -479,8 +479,8 @@ function renderSessionForm(clientId) {
 
   // Show plan if exists
   if (client.next_session_plan) {
-    const planCard = el('div', { className: 'card', style: 'border-right:4px solid #40916c;margin-bottom:20px;' }, [
-      el('div', { style: 'color:#40916c;font-weight:700;font-size:0.9rem;margin-bottom:6px;', textContent: '📋 תוכנית שהוכנה לפגישה זו:' }),
+    const planCard = el('div', { className: 'card', style: 'border-right:4px solid var(--accent);margin-bottom:20px;background:var(--accent-light);' }, [
+      el('div', { style: 'color:var(--accent);font-weight:700;font-size:0.9rem;margin-bottom:6px;', textContent: '📋 תוכנית שהוכנה לפגישה זו:' }),
       el('div', { style: 'white-space:pre-wrap;font-size:0.95rem;', textContent: client.next_session_plan })
     ]);
     container.appendChild(planCard);
