@@ -24,8 +24,38 @@ class Handler(SimpleHTTPRequestHandler):
             with open(DATA_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             self._respond(200, {'ok': True})
+        elif self.path == '/api/calendar/create':
+            self._handle_calendar_create()
+        elif self.path == '/api/calendar/status':
+            self._handle_calendar_status()
         else:
             self.send_error(404)
+
+    def _handle_calendar_create(self):
+        try:
+            from calendar_integration import create_training_event
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            result = create_training_event(
+                client_name=body['client_name'],
+                dog_name=body['dog_name'],
+                date_str=body['date'],
+                time_str=body['time'],
+                address=body.get('address', ''),
+                plan=body.get('plan', ''),
+            )
+            self._respond(200, {'ok': True, 'event': result})
+        except FileNotFoundError as e:
+            self._respond(400, {'ok': False, 'error': str(e)})
+        except Exception as e:
+            self._respond(500, {'ok': False, 'error': str(e)})
+
+    def _handle_calendar_status(self):
+        try:
+            from calendar_integration import is_authenticated
+            self._respond(200, {'authenticated': is_authenticated()})
+        except Exception:
+            self._respond(200, {'authenticated': False})
 
     def _send_json_file(self):
         try:
