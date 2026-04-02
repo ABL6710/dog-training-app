@@ -2,3 +2,7 @@ node_modules/
 test-results/
 playwright-report/
 .claude/
+credentials.json
+token.json
+__pycache__/
+.DS_Store
