@@ -77,6 +77,26 @@ const DB = {
     return true;
   },
 
+  updateSession(clientId, sessionId, updates) {
+    const data = this.load();
+    const client = data.clients.find(c => c.id === clientId);
+    if (!client) return false;
+    const session = client.sessions.find(s => s.id === sessionId);
+    if (!session) return false;
+    Object.assign(session, updates);
+    this.save(data);
+    return true;
+  },
+
+  deleteSession(clientId, sessionId) {
+    const data = this.load();
+    const client = data.clients.find(c => c.id === clientId);
+    if (!client) return false;
+    client.sessions = client.sessions.filter(s => s.id !== sessionId);
+    this.save(data);
+    return true;
+  },
+
   updateNotes(clientId, notes) {
     const data = this.load();
     const client = data.clients.find(c => c.id === clientId);
@@ -297,7 +317,7 @@ function renderClientDetail(clientId) {
 
   // Owner details
   const ownerCard = el('div', { className: 'detail-card' }, [el('h3', { textContent: 'פרטי בעלים' })]);
-  const ownerRows = [['שם', client.name], ['טלפון', client.phone], ['כתובת', client.address], ['לקוח מאז', client.created_at]];
+  const ownerRows = [['שם', client.name], ['טלפון', client.phone], ['כתובת', client.address], ['מחיר לפגישה', client.session_price], ['לקוח מאז', client.created_at]];
   for (const [label, value] of ownerRows) {
     if (!value) continue;
     const row = el('div', { className: 'detail-row' }, [
@@ -327,7 +347,7 @@ function renderClientDetail(clientId) {
     ]));
   }
   if (client.dog.issues) {
-    const issuesRow = el('div', { className: 'detail-row', style: 'flex-direction:column;gap:4px;' }, [
+    const issuesRow = el('div', { className: 'detail-row' }, [
       el('span', { className: 'label', textContent: 'בעיות / סיבת הפנייה' }),
       el('span', { className: 'value', style: 'white-space:pre-wrap', textContent: client.dog.issues })
     ]);
@@ -344,6 +364,83 @@ function renderClientDetail(clientId) {
   container.appendChild(buildEditableSection('plan-section', 'תוכנית לפגישה הבאה', client.next_session_plan, 'אין תוכנית עדיין',
     (val) => { DB.updatePlan(clientId, val); showFlash('התוכנית עודכנה!'); renderClientDetail(clientId); }));
 
+  // Schedule next session
+  const scheduleSection = el('div', { className: 'editable-section', id: 'schedule-section' });
+  const scheduleHeader = el('div', { style: 'display:flex;justify-content:space-between;align-items:center;' }, [
+    el('h3', { textContent: 'קביעת פגישה הבאה' })
+  ]);
+  scheduleSection.appendChild(scheduleHeader);
+
+  const scheduleForm = el('div', { style: 'display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;' });
+  const dateGroup = el('div', { className: 'form-group', style: 'margin-bottom:0;flex:1;min-width:150px;' });
+  dateGroup.appendChild(el('label', { textContent: 'תאריך' }));
+  const dateInput = el('input', { type: 'date', id: 'schedule-date' });
+  dateInput.value = client.next_session_date || '';
+  dateGroup.appendChild(dateInput);
+  scheduleForm.appendChild(dateGroup);
+
+  const timeGroup = el('div', { className: 'form-group', style: 'margin-bottom:0;flex:1;min-width:120px;' });
+  timeGroup.appendChild(el('label', { textContent: 'שעה' }));
+  const timeInput = el('input', { type: 'time', id: 'schedule-time' });
+  timeInput.value = client.next_session_time || '';
+  timeGroup.appendChild(timeInput);
+  scheduleForm.appendChild(timeGroup);
+
+  const calendarBtn = el('button', {
+    className: 'btn btn-primary btn-sm',
+    textContent: '📅 קבע בלוח שנה',
+    style: 'white-space:nowrap;height:42px;',
+    onClick: async () => {
+      const date = dateInput.value;
+      const time = timeInput.value;
+      if (!date || !time) {
+        showFlash('יש לבחור תאריך ושעה', 'error');
+        return;
+      }
+      // Save to client data
+      DB.updateClient(clientId, { next_session_date: date, next_session_time: time });
+
+      // Create Google Calendar event
+      calendarBtn.textContent = '...שולח';
+      calendarBtn.disabled = true;
+      try {
+        const res = await fetch('/api/calendar/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_name: client.name,
+            dog_name: client.dog.name,
+            date: date,
+            time: time,
+            address: client.address || '',
+            plan: client.next_session_plan || '',
+          })
+        });
+        const result = await res.json();
+        if (result.ok) {
+          showFlash('הפגישה נקבעה בלוח השנה!');
+        } else {
+          showFlash('שגיאה: ' + (result.error || 'לא ניתן ליצור אירוע'), 'error');
+        }
+      } catch (e) {
+        showFlash('שגיאה בחיבור לשרת', 'error');
+      }
+      calendarBtn.textContent = '📅 קבע בלוח שנה';
+      calendarBtn.disabled = false;
+    }
+  });
+  scheduleForm.appendChild(calendarBtn);
+  scheduleSection.appendChild(scheduleForm);
+
+  // Show current scheduled date if exists
+  if (client.next_session_date) {
+    const info = el('div', { style: 'margin-top:10px;color:var(--primary);font-size:0.95rem;' });
+    info.textContent = '📅 פגישה הבאה: ' + client.next_session_date + (client.next_session_time ? ' בשעה ' + client.next_session_time : '');
+    scheduleSection.appendChild(info);
+  }
+
+  container.appendChild(scheduleSection);
+
   // Sessions
   const sessionsDiv = el('div', { className: 'sessions-section' });
   const sessionsHeader = el('div', { style: 'display:flex;justify-content:space-between;align-items:center;' }, [
@@ -356,17 +453,96 @@ function renderClientDetail(clientId) {
     sessionsDiv.appendChild(el('div', { className: 'empty-state' }, [el('p', { textContent: 'אין פגישות עדיין' })]));
   } else {
     for (const s of sessions) {
-      const card = el('div', { className: 'session-card' }, [
-        el('div', { className: 'session-date', textContent: s.date })
+      const card = el('div', { className: 'session-card' });
+
+      // Header row: date + edit/delete buttons
+      const dateRow = el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;' }, [
+        el('div', { className: 'session-date', textContent: s.date }),
+        el('div', { className: 'btn-group' })
       ]);
-      const fields = [['מה עשינו', s.summary], ['תגובת הכלב', s.dog_behavior], ['שיעורי בית', s.homework], ['הערות', s.notes]];
+      const btnGroup = dateRow.querySelector('.btn-group');
+      const editBtn = el('button', { className: 'btn-edit', textContent: 'עריכה' });
+      const deleteBtn = el('button', { className: 'btn-edit', style: 'color:var(--danger)', textContent: 'מחיקה', onClick: () => {
+        if (confirm('למחוק את הפגישה מתאריך ' + s.date + '?')) {
+          DB.deleteSession(client.id, s.id);
+          showFlash('הפגישה נמחקה');
+          renderClientDetail(clientId);
+        }
+      }});
+      btnGroup.appendChild(editBtn);
+      btnGroup.appendChild(deleteBtn);
+      card.appendChild(dateRow);
+
+      // View mode: display fields
+      const viewDiv = el('div', { className: 'content' });
+      const fields = [['מה עשינו', s.summary, 'summary'], ['תגובת הכלב', s.dog_behavior, 'dog_behavior'], ['שיעורי בית', s.homework, 'homework'], ['הערות', s.notes, 'notes']];
       for (const [label, value] of fields) {
         if (!value) continue;
-        card.appendChild(el('div', { className: 'session-field' }, [
+        viewDiv.appendChild(el('div', { className: 'session-field' }, [
           el('div', { className: 'field-label', textContent: label }),
           el('div', { className: 'field-value', textContent: value })
         ]));
       }
+      card.appendChild(viewDiv);
+
+      // Edit mode: textareas for each field
+      const editDiv = el('div', { style: 'display:none;' });
+      const fieldDefs = [
+        ['תאריך', 'date', s.date, 'date'],
+        ['מה עשינו', 'summary', s.summary, 'textarea'],
+        ['תגובת הכלב', 'dog_behavior', s.dog_behavior, 'textarea'],
+        ['שיעורי בית', 'homework', s.homework, 'textarea'],
+        ['הערות', 'notes', s.notes, 'textarea']
+      ];
+      const inputs = {};
+      for (const [label, key, value, type] of fieldDefs) {
+        const group = el('div', { className: 'form-group' });
+        group.appendChild(el('label', { textContent: label }));
+        if (type === 'date') {
+          const input = el('input', { type: 'date' });
+          input.value = value || '';
+          inputs[key] = input;
+          group.appendChild(input);
+        } else {
+          const ta = el('textarea', { placeholder: label + '...' });
+          ta.value = value || '';
+          inputs[key] = ta;
+          group.appendChild(ta);
+        }
+        editDiv.appendChild(group);
+      }
+
+      const editActions = el('div', { className: 'edit-actions', style: 'display:flex;gap:8px;margin-top:10px;' });
+      const saveBtn = el('button', { className: 'btn btn-primary btn-sm', textContent: 'שמור' });
+      const cancelBtn = el('button', { className: 'btn btn-secondary btn-sm', textContent: 'ביטול' });
+      editActions.appendChild(saveBtn);
+      editActions.appendChild(cancelBtn);
+      editDiv.appendChild(editActions);
+      card.appendChild(editDiv);
+
+      // Toggle edit mode
+      editBtn.addEventListener('click', () => {
+        viewDiv.style.display = 'none';
+        editDiv.style.display = 'block';
+        editBtn.style.display = 'none';
+      });
+      cancelBtn.addEventListener('click', () => {
+        viewDiv.style.display = '';
+        editDiv.style.display = 'none';
+        editBtn.style.display = '';
+      });
+      saveBtn.addEventListener('click', () => {
+        DB.updateSession(clientId, s.id, {
+          date: inputs.date.value,
+          summary: inputs.summary.value.trim(),
+          dog_behavior: inputs.dog_behavior.value.trim(),
+          homework: inputs.homework.value.trim(),
+          notes: inputs.notes.value.trim(),
+        });
+        showFlash('הפגישה עודכנה!');
+        renderClientDetail(clientId);
+      });
+
       sessionsDiv.appendChild(card);
     }
   }
@@ -432,6 +608,7 @@ function renderClientForm(clientId = null) {
   phoneAddrRow.appendChild(formGroup('טלפון', 'tel', 'phone', isEdit ? client.phone : '', '050-1234567'));
   phoneAddrRow.appendChild(formGroup('כתובת', 'text', 'address', isEdit ? client.address : '', 'עיר, רחוב'));
   ownerSection.appendChild(phoneAddrRow);
+  ownerSection.appendChild(formGroup('מחיר לפגישה', 'text', 'session_price', isEdit ? (client.session_price || '') : '', 'למשל: 200 ₪'));
   ownerSection.appendChild(formGroupTextarea('הערות כלליות', 'notes', isEdit ? client.notes : '', 'הערות על הלקוח...'));
   form.appendChild(ownerSection);
 
@@ -460,6 +637,7 @@ function renderClientForm(clientId = null) {
       name: fd.get('name').trim(),
       phone: fd.get('phone').trim(),
       address: fd.get('address').trim(),
+      session_price: fd.get('session_price').trim(),
       notes: fd.get('notes').trim(),
       dog: {
         name: fd.get('dog_name').trim(),
@@ -485,7 +663,7 @@ function renderClientForm(clientId = null) {
   appEl.replaceChildren(container);
 }
 
-function renderSessionForm(clientId) {
+function renderSessionForm(clientId, sessionId) {
   const client = DB.getClient(clientId);
   if (!client) {
     showFlash('לקוח לא נמצא', 'error');
@@ -493,13 +671,16 @@ function renderSessionForm(clientId) {
     return;
   }
 
+  const existing = sessionId ? client.sessions.find(s => s.id === sessionId) : null;
+  const isEdit = !!existing;
+
   const container = document.createDocumentFragment();
   container.appendChild(el('div', { className: 'page-header' }, [
-    el('h2', { textContent: 'פגישה חדשה – ' + client.dog.name + ' (' + client.name + ')' })
+    el('h2', { textContent: (isEdit ? 'עריכת פגישה' : 'פגישה חדשה') + ' – ' + client.dog.name + ' (' + client.name + ')' })
   ]));
 
-  // Show plan if exists
-  if (client.next_session_plan) {
+  // Show plan if exists (only for new sessions)
+  if (!isEdit && client.next_session_plan) {
     const planCard = el('div', { className: 'card', style: 'border-right:4px solid var(--accent);margin-bottom:20px;background:var(--accent-light);' }, [
       el('div', { style: 'color:var(--accent);font-weight:700;font-size:0.9rem;margin-bottom:6px;', textContent: '📋 תוכנית שהוכנה לפגישה זו:' }),
       el('div', { style: 'white-space:pre-wrap;font-size:0.95rem;', textContent: client.next_session_plan })
@@ -510,14 +691,14 @@ function renderSessionForm(clientId) {
   const formCard = el('div', { className: 'form-card' });
   const form = el('form', { id: 'session-form' });
 
-  form.appendChild(formGroup('תאריך', 'date', 'date', getToday()));
-  form.appendChild(formGroupTextarea('מה עשינו בפגישה *', 'summary', '', 'תאר את התרגילים והפעילויות שביצעתם...', true));
-  form.appendChild(formGroupTextarea('איך הכלב הגיב', 'dog_behavior', '', 'תאר את התנהגות הכלב, התקדמות, קשיים...'));
-  form.appendChild(formGroupTextarea('שיעורי בית לבעלים', 'homework', '', 'מה הבעלים צריכים לתרגל עד הפגישה הבאה...'));
-  form.appendChild(formGroupTextarea('הערות נוספות', 'session_notes', '', 'כל דבר נוסף שחשוב לציין...'));
+  form.appendChild(formGroup('תאריך', 'date', 'date', isEdit ? existing.date : getToday()));
+  form.appendChild(formGroupTextarea('מה עשינו בפגישה *', 'summary', isEdit ? existing.summary : '', 'תאר את התרגילים והפעילויות שביצעתם...', true));
+  form.appendChild(formGroupTextarea('איך הכלב הגיב', 'dog_behavior', isEdit ? existing.dog_behavior : '', 'תאר את התנהגות הכלב, התקדמות, קשיים...'));
+  form.appendChild(formGroupTextarea('שיעורי בית לבעלים', 'homework', isEdit ? existing.homework : '', 'מה הבעלים צריכים לתרגל עד הפגישה הבאה...'));
+  form.appendChild(formGroupTextarea('הערות נוספות', 'session_notes', isEdit ? existing.notes : '', 'כל דבר נוסף שחשוב לציין...'));
 
   const actions = el('div', { className: 'form-actions' }, [
-    el('button', { type: 'submit', className: 'btn btn-primary', textContent: 'שמור פגישה' }),
+    el('button', { type: 'submit', className: 'btn btn-primary', textContent: isEdit ? 'שמור שינויים' : 'שמור פגישה' }),
     el('a', { href: '#/client/' + client.id, className: 'btn btn-secondary', textContent: 'ביטול' })
   ]);
   form.appendChild(actions);
@@ -532,8 +713,13 @@ function renderSessionForm(clientId) {
       homework: fd.get('homework').trim(),
       notes: fd.get('session_notes').trim(),
     };
-    DB.addSession(clientId, session);
-    showFlash('הפגישה נוספה בהצלחה!');
+    if (isEdit) {
+      DB.updateSession(clientId, sessionId, session);
+      showFlash('הפגישה עודכנה בהצלחה!');
+    } else {
+      DB.addSession(clientId, session);
+      showFlash('הפגישה נוספה בהצלחה!');
+    }
     Router.navigate('#/client/' + clientId);
   });
 
@@ -616,6 +802,7 @@ Router.on('#/client/new', () => renderClientForm());
 Router.on('#/client/:id', (id) => renderClientDetail(id));
 Router.on('#/client/:id/edit', (id) => renderClientForm(id));
 Router.on('#/client/:id/session/new', (id) => renderSessionForm(id));
+Router.on('#/client/:id/session/:sid/edit', (id, sid) => renderSessionForm(id, sid));
 
 // Load data from file (if server.py is running), then start the app
 DB.loadFromFile().then(function() { Router.init(); });
