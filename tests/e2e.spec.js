@@ -57,6 +57,7 @@ test.describe('Client Management', () => {
     await page.fill('#name', 'דני כהן');
     await page.fill('#phone', '050-1234567');
     await page.fill('#address', 'תל אביב, רחוב דיזנגוף 100');
+    await page.fill('#session_price', '250 ₪');
     await page.fill('#notes', 'לקוח מגיע מהמלצה של ירון');
 
     // Fill dog details
@@ -79,6 +80,7 @@ test.describe('Client Management', () => {
     await expect(page.locator('.detail-card').first()).toContainText('דני כהן');
     await expect(page.locator('.detail-card').first()).toContainText('050-1234567');
     await expect(page.locator('.detail-card').first()).toContainText('תל אביב');
+    await expect(page.locator('.detail-card').first()).toContainText('250 ₪');
     await expect(page.locator('.detail-card').nth(1)).toContainText('רקס');
     await expect(page.locator('.detail-card').nth(1)).toContainText('רועה גרמני');
     await expect(page.locator('.detail-card').nth(1)).toContainText('3 שנים');
@@ -311,6 +313,53 @@ test.describe('Session Management', () => {
     // Go to home page
     await page.click('text=לקוחות');
     await expect(page.locator('.client-badge')).toContainText('2 פגישות');
+  });
+
+  test('should edit an existing session inline', async ({ page }) => {
+    await addTestClient(page, 'דני כהן', 'רקס');
+
+    // Add a session
+    await page.click('text=+ פגישה חדשה');
+    await page.fill('#summary', 'פגישה ראשונה');
+    await page.fill('#dog_behavior', 'היה רגוע');
+    await page.click('button:has-text("שמור פגישה")');
+
+    // Click inline edit on the session card
+    const card = page.locator('.session-card').first();
+    await card.locator('button:has-text("עריכה")').click();
+
+    // Should still be on the same page (inline edit, not navigation)
+    await expect(page.locator('h2')).toContainText('דני כהן – רקס');
+
+    // Textareas should be visible inside the card
+    const summaryTextarea = card.locator('textarea').first();
+    await expect(summaryTextarea).toBeVisible();
+    await expect(summaryTextarea).toHaveValue('פגישה ראשונה');
+
+    // Update the summary
+    await summaryTextarea.fill('פגישה ראשונה - מעודכן');
+    await card.locator('button:has-text("שמור")').click();
+
+    // Verify
+    await expect(page.locator('#flash')).toContainText('הפגישה עודכנה');
+    await expect(page.locator('.session-card')).toContainText('פגישה ראשונה - מעודכן');
+  });
+
+  test('should delete a session', async ({ page }) => {
+    await addTestClient(page, 'דני כהן', 'רקס');
+
+    // Add a session
+    await page.click('text=+ פגישה חדשה');
+    await page.fill('#summary', 'פגישה למחיקה');
+    await page.click('button:has-text("שמור פגישה")');
+    await expect(page.locator('.session-card')).toHaveCount(1);
+
+    // Delete
+    page.on('dialog', dialog => dialog.accept());
+    await page.locator('.session-card').first().locator('button:has-text("מחיקה")').click();
+
+    await expect(page.locator('#flash')).toContainText('הפגישה נמחקה');
+    await expect(page.locator('.session-card')).toHaveCount(0);
   });
 
   test('should show next session plan in session form', async ({ page }) => {
