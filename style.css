@@ -53,7 +53,7 @@ body {
 
 /* === Layout === */
 .container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -234,6 +234,7 @@ header nav a:hover {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 16px;
+  align-items: start;
 }
 
 .detail-card {
@@ -255,7 +256,7 @@ header nav a:hover {
 
 .detail-row {
   display: flex;
-  justify-content: space-between;
+  gap: 12px;
   align-items: baseline;
   padding: 5px 0;
   font-size: 1rem;
@@ -269,6 +270,7 @@ header nav a:hover {
   color: var(--text);
   font-weight: 500;
 }
+
 
 .detail-row .value a,
 .detail-row a {
@@ -310,7 +312,7 @@ header nav a:hover {
 
 .editable-section textarea {
   width: 100%;
-  min-height: 80px;
+  min-height: 300px;
   padding: 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
@@ -321,6 +323,8 @@ header nav a:hover {
   display: none;
   line-height: 1.7;
   transition: border-color var(--ease);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .editable-section textarea:focus {
@@ -392,6 +396,54 @@ header nav a:hover {
   font-size: 1rem;
   white-space: pre-wrap;
   line-height: 1.6;
+}
+
+.session-card textarea,
+.session-card input[type="date"] {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-family: var(--font-body);
+  direction: rtl;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color var(--ease);
+}
+
+.session-card textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.session-card textarea:focus,
+.session-card input[type="date"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(58, 117, 99, .1);
+}
+
+/* === Schedule Section === */
+#schedule-section input[type="date"],
+#schedule-section input[type="time"] {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color var(--ease);
+}
+
+#schedule-section input[type="date"]:focus,
+#schedule-section input[type="time"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(58, 117, 99, .1);
 }
 
 /* === Buttons === */
