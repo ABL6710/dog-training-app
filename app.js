@@ -176,6 +176,66 @@ function esc(str) {
     .replace(/'/g, '&#039;');
 }
 
+function renderMarkdown(text) {
+  if (!text) return '';
+  // First escape HTML to prevent XSS
+  var s = esc(text);
+  // Split into lines for block-level processing
+  var lines = s.split('\n');
+  var html = [];
+  var inList = false;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<hr>');
+      continue;
+    }
+    // Headings
+    if (/^### (.+)$/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<h4>' + line.replace(/^### /, '') + '</h4>');
+      continue;
+    }
+    if (/^## (.+)$/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<h3>' + line.replace(/^## /, '') + '</h3>');
+      continue;
+    }
+    if (/^# (.+)$/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<h2>' + line.replace(/^# /, '') + '</h2>');
+      continue;
+    }
+    // List items (- or * at start)
+    if (/^[\-\*] (.+)$/.test(line.trim())) {
+      if (!inList) { html.push('<ul>'); inList = true; }
+      html.push('<li>' + line.trim().replace(/^[\-\*] /, '') + '</li>');
+      continue;
+    }
+    // Numbered list items
+    if (/^\d+\. (.+)$/.test(line.trim())) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<div class="md-list-item">' + line.trim() + '</div>');
+      continue;
+    }
+    // Regular line
+    if (inList) { html.push('</ul>'); inList = false; }
+    if (line.trim() === '') {
+      html.push('<br>');
+    } else {
+      html.push('<p>' + line + '</p>');
+    }
+  }
+  if (inList) html.push('</ul>');
+  var result = html.join('');
+  // Inline formatting: bold then italic
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  return result;
+}
+
 function showFlash(message, type = 'success') {
   const flash = document.getElementById('flash');
   flash.className = 'flash ' + type;
@@ -349,7 +409,7 @@ function renderClientDetail(clientId) {
   if (client.dog.issues) {
     const issuesRow = el('div', { className: 'detail-row' }, [
       el('span', { className: 'label', textContent: 'בעיות / סיבת הפנייה' }),
-      el('span', { className: 'value', style: 'white-space:pre-wrap', textContent: client.dog.issues })
+      (() => { var d = el('span', { className: 'value markdown-body' }); d.innerHTML = renderMarkdown(client.dog.issues); return d; })()
     ]);
     dogCard.appendChild(issuesRow);
   }
@@ -478,10 +538,13 @@ function renderClientDetail(clientId) {
       const fields = [['מה עשינו', s.summary, 'summary'], ['תגובת הכלב', s.dog_behavior, 'dog_behavior'], ['שיעורי בית', s.homework, 'homework'], ['הערות', s.notes, 'notes']];
       for (const [label, value] of fields) {
         if (!value) continue;
-        viewDiv.appendChild(el('div', { className: 'session-field' }, [
+        var fieldDiv = el('div', { className: 'session-field' }, [
           el('div', { className: 'field-label', textContent: label }),
-          el('div', { className: 'field-value', textContent: value })
-        ]));
+        ]);
+        var valDiv = el('div', { className: 'field-value markdown-body' });
+        valDiv.innerHTML = renderMarkdown(value);
+        fieldDiv.appendChild(valDiv);
+        viewDiv.appendChild(fieldDiv);
       }
       card.appendChild(viewDiv);
 
@@ -560,7 +623,12 @@ function buildEditableSection(id, title, value, emptyText, onSave) {
   header.appendChild(editBtn);
   section.appendChild(header);
 
-  const content = el('div', { className: 'content' + (value ? '' : ' empty'), textContent: value || emptyText });
+  const content = el('div', { className: 'content markdown-body' + (value ? '' : ' empty') });
+  if (value) {
+    content.innerHTML = renderMarkdown(value);
+  } else {
+    content.textContent = emptyText;
+  }
   section.appendChild(content);
 
   const textarea = el('textarea');
@@ -683,7 +751,7 @@ function renderSessionForm(clientId, sessionId) {
   if (!isEdit && client.next_session_plan) {
     const planCard = el('div', { className: 'card', style: 'border-right:4px solid var(--accent);margin-bottom:20px;background:var(--accent-light);' }, [
       el('div', { style: 'color:var(--accent);font-weight:700;font-size:0.9rem;margin-bottom:6px;', textContent: '📋 תוכנית שהוכנה לפגישה זו:' }),
-      el('div', { style: 'white-space:pre-wrap;font-size:0.95rem;', textContent: client.next_session_plan })
+      (() => { var d = el('div', { className: 'markdown-body', style: 'font-size:0.95rem;' }); d.innerHTML = renderMarkdown(client.next_session_plan); return d; })()
     ]);
     container.appendChild(planCard);
   }
